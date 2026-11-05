@@ -281,6 +281,7 @@ const RM={
   slate:new THREE.MeshStandardMaterial({color:0x5a5f6b,roughness:.9,side:THREE.DoubleSide,flatShading:true}),
   shed:new THREE.MeshStandardMaterial({color:0x707c8a,roughness:.9,side:THREE.DoubleSide,flatShading:true}),
   brick:new THREE.MeshStandardMaterial({color:0xa5563f,roughness:1}),
+  gable:new THREE.MeshStandardMaterial({color:0xf2f2ee,roughness:.9,side:THREE.DoubleSide}),
   frame:new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:.6,side:THREE.DoubleSide}),
   glass:new THREE.MeshStandardMaterial({color:0x8fc7ff,transparent:true,opacity:.65,roughness:.1,side:THREE.DoubleSide})
 };
@@ -301,6 +302,13 @@ function gableRoof(x0,y0,x1,y1,deg,mat,ov=.25){ // ridge runs north-south
   const h=E+W/2*t,xm=(X0+X1)/2,A=[X0,E,Z0],B=[X1,E,Z0],C=[X1,E,Z1],Dd=[X0,E,Z1],r0=[xm,h,Z0],r1=[xm,h,Z1];
   quad(p,A,Dd,r1,r0);quad(p,B,C,r1,r0);tri(e,A,B,r0);tri(e,Dd,C,r1);
   const grp=new THREE.Group();grp.add(roofMesh(p,mat));grp.add(roofMesh(e,wallMat));return grp}
+function gableRoofEW(x0,y0,x1,y1,deg,mat,ov=.25,ovEnd=.1){ // ridge runs east-west, vertical gable ends (no hips)
+  const {X0,X1,Z0,Z1}=rr(x0,y0,x1,y1,ov),xa=X0+ov-ovEnd,xb=X1-ov+ovEnd,t=Math.tan(deg*Math.PI/180),E=WALL,L=Z1-Z0,p=[],e=[];
+  const tri=(q,a,b,c)=>q.push(...a,...b,...c),quad=(q,a,b,c,d)=>{tri(q,a,b,c);tri(q,a,c,d)};
+  const h=E+L/2*t,zm=(Z0+Z1)/2,A=[xa,E,Z0],B=[xb,E,Z0],C=[xb,E,Z1],Dd=[xa,E,Z1],r0=[xa,h,zm],r1=[xb,h,zm];
+  quad(p,A,B,r1,r0);quad(p,Dd,C,r1,r0);
+  tri(e,A,Dd,r0);tri(e,B,C,r1);
+  const grp=new THREE.Group();grp.add(roofMesh(p,mat));grp.add(roofMesh(e,RM.gable));grp.userData={h,cx:(xa+xb)/2,cz:zm};return grp}
 function shedRoof(x0,y0,x1,y1,rise,high,mat,ov=.15){ // high = 'E' (east side up) or 'S' (south side up)
   const {X0,X1,Z0,Z1}=rr(x0,y0,x1,y1,ov),E=WALL,p=[],e=[];
   const tri=(q,a,b,c)=>q.push(...a,...b,...c),quad=(q,a,b,c,d)=>{tri(q,a,b,c);tri(q,a,c,d)};
@@ -312,7 +320,7 @@ function shedRoof(x0,y0,x1,y1,rise,high,mat,ov=.15){ // high = 'E' (east side up
   const grp=new THREE.Group();grp.add(roofMesh(p,mat));grp.add(roofMesh(e,wallMat));return grp}
 function buildRoof(id){
   disposeGroup(roofG);
-  const main=hipRoof(580,-1262,1735,-603,30,RM.tile);roofG.add(main);
+  const main=gableRoofEW(580,-1262,1735,-603,30,RM.tile);roofG.add(main);
   const u=main.userData;
   if(id!=='E'&&id!=='F'){const ch=new THREE.Mesh(new THREE.BoxGeometry(.6,1.4,.6),RM.brick);ch.position.set(10.4,u.h+.3,u.cz);roofG.add(ch)} // plan E has no chimney
   // skylights set into the main roof: side 'N' = north-facing slope, 'S' = south-facing slope (cx, cz in metres)
